@@ -43,6 +43,7 @@ def main(argv=None):
         print(f"      before: {len(fa)} keyframes, after: {len(fb)} keyframes")
         print("[2/6] joint 3D reconstruction (VGGT)")
         scene = reconstruct.reconstruct(fa, fb)
+        scene["kf_a"], scene["kf_b"] = np.array(ia), np.array(ib)  # indices into the frames sampled at 6 fps
         np.savez_compressed(cache, **scene)
 
     scale, scale_src = None, "none (scene units)"
@@ -63,7 +64,8 @@ def main(argv=None):
         n = len(c.state)
         print(f"      {name}: {n} pts | static {np.mean(c.state == 0):.0%} changed {np.mean(c.state == 1):.1%} "
               f"unverifiable {np.mean(c.state == 2):.0%}")
-    print(f"      depth noise {info['depth_noise']:.1%} -> tolerance {info['tol_rel']:.1%} of depth | "
+    print(f"      depth noise {info['depth_noise']:.1%}; tolerance {info['tol_rel']:.1%} of depth + {info['tol_abs'] * 100:.1f} cm "
+          f"(level x{info['tolerance_level']:g} chosen by the null test){'' if info['reconstruction_ok'] else ' - LOW CONSISTENCY, results less reliable'} | "
           f"{len(clusters)} confident change clusters, {len(info['uncertain'])} uncertain (not reported)")
     icp = info["icp"]
     print(f"      before/after alignment refined on static surfaces: rmse {icp['rmse_before'] * 100:.1f} -> "
@@ -113,10 +115,22 @@ def main(argv=None):
         print(f"      (rerun export skipped: {e})")
     if args.gif:
         viz.orbit_gif(changes, a, b, args.out / "orbit.gif")
+    # compact record for external evaluation: final cameras (after ICP), depth, keyframes, change points
+    ev = dict(extrinsic=scene["extrinsic"], intrinsic=scene["intrinsic"], rec=scene["rec"],
+              depth=scene["depth"].astype(np.float16), kinds=np.array([c.kind for c in changes]))
+    for k in ("kf_a", "kf_b"):
+        if k in scene:
+            ev[k] = scene[k]
+    for i, c in enumerate(changes):
+        ev[f"p{i}_0"] = c.points.astype(np.float32)
+        if c.points_to is not None:
+            ev[f"p{i}_1"] = c.points_to.astype(np.float32)
+    np.savez_compressed(args.out / "eval_data.npz", **ev)
     (args.out / "run_info.json").write_text(json.dumps(dict(
         frames=int(len(scene["rec"])), image_size=list(scene["depth"].shape[1:]), metric_scale=scale, scale_source=scale_src,
         median_depth=info["median_depth"], depth_noise=info["depth_noise"], tolerance=info["tol_rel"],
-        null_test=info.get("null_test"), alignment_refinement=info["icp"], seconds=round(time.time() - T, 1)), indent=2))
+        null_test=info.get("null_test"), alignment_refinement=info["icp"], tolerance_level=info["tolerance_level"],
+        tolerance_abs=info["tol_abs"], reconstruction_ok=info["reconstruction_ok"], seconds=round(time.time() - T, 1)), indent=2))
     print(f"done in {time.time() - T:.0f}s -> {args.out}/ (open viewer.html)")
 
 

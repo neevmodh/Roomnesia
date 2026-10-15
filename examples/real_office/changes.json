@@ -1,0 +1,179 @@
+{
+  "units": "m",
+  "frame": "room frame: y up, floor at y=0, x/z aligned to the walls (right-handed), origin on the floor under the first camera of recording A",
+  "changes": [
+    {
+      "id": 1,
+      "type": "moved",
+      "label": "chair",
+      "label_confidence": 0.608,
+      "label_source": "detector",
+      "place": "next to the chair",
+      "place_after": "next to the chair",
+      "description": "a blue chair",
+      "sentence": "A blue chair was moved 0.5m, staying next to the chair (0.4m to the right and 0.4m further away, as seen from where recording A started), and turned ~25\u00b0.",
+      "confidence": 0.926,
+      "position": [
+        1.328,
+        0.851,
+        -0.447
+      ],
+      "position_after": [
+        1.546,
+        0.854,
+        -0.95
+      ],
+      "size_xyz": [
+        0.29,
+        1.07,
+        0.569
+      ],
+      "bottom_height": 0.316,
+      "displacement": 0.548,
+      "rotation_deg": -25.3
+    },
+    {
+      "id": 2,
+      "type": "added",
+      "label": "office chair",
+      "label_confidence": 0.382,
+      "label_source": "siglip",
+      "place": "next to the chair",
+      "description": "a green office chair",
+      "sentence": "A green office chair (~0.4m wide, 0.5m tall) appeared next to the chair.",
+      "confidence": 0.857,
+      "position": [
+        0.023,
+        0.546,
+        -1.893
+      ],
+      "size_xyz": [
+        0.292,
+        0.544,
+        0.387
+      ],
+      "bottom_height": 0.274
+    },
+    {
+      "id": 3,
+      "type": "moved",
+      "label": "stool",
+      "label_confidence": 0.5,
+      "label_source": "siglip",
+      "place": "next to the chair",
+      "place_after": "next to the chair",
+      "description": "a stool",
+      "sentence": "A stool was moved 0.2m, staying next to the chair (0.1m to the right and 0.1m further away, as seen from where recording A started), and turned ~166\u00b0.",
+      "confidence": 0.845,
+      "position": [
+        1.366,
+        0.971,
+        0.356
+      ],
+      "position_after": [
+        1.444,
+        0.956,
+        0.202
+      ],
+      "size_xyz": [
+        0.266,
+        1.094,
+        0.57
+      ],
+      "bottom_height": 0.424,
+      "displacement": 0.172,
+      "rotation_deg": 166.0
+    }
+  ],
+  "routes": [
+    {
+      "name": "route walked in A",
+      "status": "unchanged",
+      "sentence": "The route walked in A is unaffected (0.3 m).",
+      "caused_by": [],
+      "length_before": 0.34,
+      "length_after": 0.34
+    },
+    {
+      "name": "route walked in B",
+      "status": "unchanged",
+      "sentence": "The route walked in B is unaffected (1.2 m).",
+      "caused_by": [],
+      "length_before": 1.23,
+      "length_after": 1.23
+    }
+  ],
+  "next_best_views": [
+    {
+      "position": [
+        -0.48,
+        1.863,
+        -1.898
+      ],
+      "yaw_deg": 127.0,
+      "unverified_area_m2": 6.88,
+      "sentence": "Stand 1.9m ahead of and 0.3m right of where recording A started, facing back towards the start: this would check ~6.9 m\u00b2 of surface neither video could verify."
+    },
+    {
+      "position": [
+        1.27,
+        1.863,
+        -1.898
+      ],
+      "yaw_deg": 159.0,
+      "unverified_area_m2": 4.73,
+      "sentence": "Stand 1.3m ahead of and 1.9m right of where recording A started, facing back towards the start: this would check ~4.7 m\u00b2 of surface neither video could verify."
+    },
+    {
+      "position": [
+        0.52,
+        1.863,
+        0.102
+      ],
+      "yaw_deg": -3.0,
+      "unverified_area_m2": 9.25,
+      "sentence": "Stand 0.3m behind and 0.4m right of where recording A started, facing ahead: this would check ~9.3 m\u00b2 of surface neither video could verify."
+    }
+  ],
+  "self_check": {
+    "depth_noise": 0.0154,
+    "tolerance": 0.108,
+    "null_test": {
+      "before": {
+        "false_changes": 0,
+        "flagged_points": 0.007133016816386014
+      },
+      "after": {
+        "false_changes": 0,
+        "flagged_points": 0.00687248576625254
+      }
+    },
+    "alignment_refinement": {
+      "rmse_before": 0.030154118706715204,
+      "rmse_after": 0.023779179224390986,
+      "shift": 0.03554455688229492,
+      "rotation_deg": 0.7453648301645335,
+      "applied": true
+    }
+  },
+  "uncertain_candidates": [
+    {
+      "kind": "removed",
+      "score": 0.55,
+      "position": [
+        0.4099999964237213,
+        1.0369999408721924,
+        -1.9290000200271606
+      ]
+    },
+    {
+      "kind": "added",
+      "score": 0.57,
+      "position": [
+        1.909000039100647,
+        1.5099999904632568,
+        -0.012000000104308128
+      ]
+    }
+  ]
+}

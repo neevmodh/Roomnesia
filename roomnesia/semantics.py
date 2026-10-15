@@ -142,6 +142,20 @@ class Labeler:
         return VOCAB[top], float(probs[top]), emb
 
 
+def _clean_phrase(txt: str, label: str) -> str:
+    """Small VLMs sometimes answer with one bare word ('Green', 'Stool'): turn every answer into a noun
+    phrase with an article, using the detector's label as the noun when the VLM gave only a colour."""
+    words = txt.split()
+    if not words:
+        return f"a {label}"
+    if len(words) == 1:
+        w = words[0].lower()
+        words = [w] if w == label or w in label.split() else [w, label]
+    if words[0].lower() not in ("a", "an", "the"):
+        words = ["an" if words[0][0].lower() in "aeiou" else "a"] + [w.lower() if i == 0 else w for i, w in enumerate(words)]
+    return " ".join(words)
+
+
 class Captioner:
     """Short noun phrase for an object crop from a small local VLM (SmolVLM2), optional."""
 
@@ -170,7 +184,7 @@ class Captioner:
         txt = txt.strip().strip(".").split("\n")[0]
         if txt.lower().startswith("assistant:"):
             txt = txt[10:].strip()
-        return txt[:60] or f"a {hint}"
+        return _clean_phrase(txt[:60], hint)
 
 
 # ------------------------------------------------------------------------------------ geometry ---
@@ -252,8 +266,10 @@ def describe(c: Change, scene: dict) -> str:
     unit = "m" if metric else " units"
     if c.kind == "moved":
         s = f"{name} was moved {c.displacement:.1f}{unit}"
-        if c.place_from or c.place_to:
-            strip = lambda t: t[3:] if t.startswith("on ") else t  # "from on the floor" -> "from the floor"
+        strip = lambda t: t[3:] if t.startswith("on ") else t  # "from on the floor" -> "from the floor"
+        if c.place_from and c.place_from == c.place_to:
+            s += f", staying {strip(c.place_from)}"
+        elif c.place_from or c.place_to:
             s += f", from {strip(c.place_from) or 'its old spot'} to {strip(c.place_to) or 'a new spot'}"
         dw = _dir_words(np.array(c.centroid_to) - np.array(c.centroid), scene["view0"], metric)
         if dw:
@@ -279,6 +295,41 @@ def describe(c: Change, scene: dict) -> str:
 
 
 # ------------------------------------------------------------------------------------ pipeline ---
+
+def _absorb_fragments(changes: list[Change], gap: float = 0.25) -> list[Change]:
+    """In clutter one real change is often detected as several pieces (e.g. the parts of a moved bucket
+    that each video saw). A removal/addition lying within `gap` of a move's old/new position, or of a
+    stronger change of the same kind, is the same event: merge it instead of reporting it again."""
+    def close(P, Q):
+        return P is not None and Q is not None and cKDTree(Q).query(P[:: max(1, len(P) // 400)])[0].min() < gap
+
+    order = sorted(range(len(changes)), key=lambda i: (changes[i].kind != "moved", -changes[i].score))
+    keep: list[Change] = []
+    for i in order:
+        c = changes[i]
+        host = None
+        for k in keep:
+            if c.kind == "removed" and k.kind in ("moved", "removed") and close(c.points, k.points):
+                host = k
+            elif c.kind == "added" and k.kind == "moved" and close(c.points, k.points_to):
+                host = k
+            elif c.kind == "added" and k.kind == "added" and close(c.points, k.points):
+                host = k
+            if host:
+                break
+        if host is None:
+            keep.append(c)
+            continue
+        if c.kind == "added" and host.kind == "moved":
+            host.points_to = np.concatenate([host.points_to, c.points])
+            host.colors_to = np.concatenate([host.colors_to, c.colors])
+        else:
+            host.points = np.concatenate([host.points, c.points])
+            host.colors = np.concatenate([host.colors, c.colors])
+        host.score = max(host.score, c.score)
+    return keep
+
+
 
 def build_changes(scene: dict, a: Cloud, b: Cloud, clusters: list[ChangeCluster], use_vlm: bool = True,
                   max_changes: int = 12, marks=()) -> list[Change]:
@@ -325,11 +376,11 @@ def build_changes(scene: dict, a: Cloud, b: Cloud, clusters: list[ChangeCluster]
                 sr, sn = np.sort(r.size), np.sort(n.size)
                 shape = np.abs(np.log((sr + 1e-3) / (sn + 1e-3))).mean()  # size, rotation-invariant
                 cost[i, j] = app + 0.6 * col + 0.5 * shape + (0 if r.label == n.label else 0.1)
-                if col > 0.7 or shape > 0.5:  # clearly different colour or size: never the same object
+                if col > 0.85 or shape > 0.5:  # clearly different colour or size: never the same object
                     cost[i, j] = np.inf
         ri, ai = linear_sum_assignment(np.minimum(cost, 1e3))
         for i, j in zip(ri, ai):
-            if cost[i, j] < 0.5:
+            if cost[i, j] < 0.6:
                 r, n = rem[i], add[j]
                 yaw, t = fit_move(r.points, n.points)
                 m = Change(kind="moved", label=r.label if (r.label_source != "siglip" or r.label_conf >= n.label_conf) and n.label_source == "siglip" or r.label == n.label else n.label,
@@ -345,6 +396,7 @@ def build_changes(scene: dict, a: Cloud, b: Cloud, clusters: list[ChangeCluster]
                 used_a.add(j)
     changes = moves + [c for i, c in enumerate(rem) if i not in used_r] + [c for j, c in enumerate(add) if j not in used_a] + \
         [c for c in items if c.kind == "appearance"]
+    changes = _absorb_fragments(changes)
     changes = sorted(changes, key=lambda c: -c.score)[:max_changes]
 
     # --- where things are, relative to the unchanged landmarks

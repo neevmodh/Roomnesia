@@ -2,11 +2,9 @@
 
 *Room + amnesia: a robot's memory of a room goes out of date the moment someone moves a chair. Roomnesia works out exactly what changed, proves each change from the camera's own viewpoint, and says what it means for navigation.*
 
-![rotating view of the reconstructed room with the detected changes](docs/img/orbit.gif)
+![real office: expected (memory of video A rendered from a video-B camera) vs actual vs changes](docs/img/real_evidence.gif)
 
-![expected (memory of video A rendered from a video-B camera) vs actual vs surprise](docs/img/evidence.gif)
-
-*Top: the shared 3D scene with the changes. Bottom: walking through the after video. Left, what each camera* should *see if nothing had changed (the before video re-rendered from that exact viewpoint; hatched = never seen). Middle, what it* did *see. Right, the changes.*
+*A real office from the [SceneDiff](https://huggingface.co/datasets/yuqun/SceneDiff) benchmark: two chairs and a stool were moved between the videos. Left, what each camera of the second video* should *see if nothing had changed (the first video re-rendered from that exact viewpoint; hatched = never seen). Middle, what it* did *see. Right, the detected changes. All 3 found, 0 false reports.*
 
 Give it two phone videos of the same room, one before and one after. It builds one shared 3D model of both recordings, then reports:
 1. **What changed:** objects that were moved, added or removed, plus flat things such as a rug or a poster whose *look* changed while their shape didn't. Each comes with 3D position, size, label and a plain-English sentence.
@@ -14,17 +12,44 @@ Give it two phone videos of the same room, one before and one after. It builds o
 3. **What it can't tell:** places the other video never saw, or saw only through an obstacle, are reported as *unverifiable*, never as changes. Each run also measures its own depth noise, colour noise and false-alarm rate.
 4. **What it means for a robot:** an updated occupancy map (ROS format), the walked routes re-planned before and after (*"the route is now blocked by the moved chair"*), and **where to stand and look next** to check the areas nobody could verify.
 
-Everything runs locally on a **16 GB MacBook (Apple M4)**: no CUDA, no cloud, no API keys. A full run takes about 1.5–3 minutes.
+Everything runs locally on a **16 GB MacBook (Apple M4)**: no CUDA, no cloud, no API keys. A full run takes about 2–4 minutes.
+
+**Tested on real data:** on 21 held-out real video pairs from a published benchmark, Roomnesia finds **90% of the furniture-scale changes** (chairs, bags, bins, boxes, stools), with 65% precision overall. Small tabletop items (pens, remotes, cups) are below its resolution, and the numbers say so ([details](#real-world-benchmark-scenediff)).
 
 | The brief asks for | Where it is |
 |---|---|
 | A shared 3D representation of both recordings | both videos reconstructed **jointly** in one VGGT pass, in one gravity-aligned, wall-aligned metric frame ([§1](#1-one-shared-3d-scene-no-registration-step)) |
 | Moved / added / removed objects, visualised in 3D | `viewer.html` (interactive three.js), `orbit.gif`, `topdown.png`, before/after cards ([§5](#outputs)) |
 | Semantic labels / natural language | SigLIP + Grounding DINO labels, SmolVLM2 noun phrases, sentences built from measured geometry and relations to unchanged furniture ([§4](#4-semantics-that-agree-with-the-geometry)) |
-| Real changes vs. viewpoint, occlusion, incomplete observations | per-ray **free-space evidence**, with self-calibrated tolerance and a built-in null test ([§2–3](#2-change--free-space-evidence-not-point-distances)) |
+| Real changes vs. viewpoint, occlusion, incomplete observations | per-ray **free-space evidence** witnessed by ≥ 4 cameras, a tolerance set by a built-in null test, and "unverifiable" instead of guesses ([§2–3](#2-change--free-space-evidence-not-point-distances)) |
+| Quality of spatial change detection | **real-world benchmark**: 21 held-out SceneDiff pairs, plus a synthetic benchmark with ground truth, an ablation and tests ([results](#real-world-benchmark-scenediff)) |
 | Simplicity and usability | one command; models download automatically; Apple-silicon friendly |
 
-<!-- REAL-ROOM RESULTS: add after running on the phone videos (see docs/CAPTURE_GUIDE.md) -->
+<!-- OWN-ROOM RESULTS: add after running on the phone videos (see docs/CAPTURE_GUIDE.md) -->
+
+## Real-world benchmark: SceneDiff
+
+[SceneDiff](https://huggingface.co/datasets/yuqun/SceneDiff) ([Wu et al., 2025](https://arxiv.org/abs/2512.16908), MIT licence) contains real phone-video pairs of the same scene, before and after objects were added, removed or moved, with every changed object masked in every frame. We use indoor, room-scale pairs only, and kept two sets separate:
+- **13 validation pairs**, used to develop and fix the system;
+- **21 held-out test pairs**, every third indoor pair of the official test split, taken alphabetically. They were run **once**, after the code was frozen.
+
+Each detected 3D change is projected into the annotated frames and matched against the masks ([protocol and per-pair table](docs/SCENEDIFF.md)).
+
+| test split (21 pairs, 56 annotated changes) | recall |
+|---|---|
+| **large objects** (over 3% of the image: chairs, stools, bags, bins, boxes) | **90%** (26/29) |
+| medium (0.5–3%: shoes, books, small boxes) | 21% (5/24) |
+| small (under 0.5%: pens, remotes, billiard balls) | 0% (0/3) |
+| **all** | 55% (31/56), **precision 65%** |
+
+![real office, moved chair: before, then expected vs actual at the old and new spot](docs/img/real_card_moved.jpg)
+
+**What the validation split taught us.** Each failure was traced to a cause and fixed with a rule, not a per-scene threshold:
+- **False reports concentrated in the few pairs whose two reconstructions disagreed** (3 cm on static surfaces instead of 1 cm). The tolerance now includes this measured disagreement, and is raised until the null test reports nothing.
+- **Wall-sized "objects"** were misregistration, not objects, so they are now rejected.
+- **One moved object was reported several times in clutter.** Fragments of the same event are now merged.
+
+Validation precision went from 48% to 58% and recall from 66% to 68%. Synthetic results were unchanged.
 
 ## Results on the synthetic benchmark (ground truth known)
 
@@ -73,7 +98,8 @@ Self-checks on every run (standard scenario):
 ![3D viewer](docs/img/viewer_synthetic.png)
 
 ## Look at the results without installing anything
-- [`examples/standard/`](examples/standard): all outputs of the standard scenario: `viewer.html` (download it and open it in a browser), `changes.json`, `evidence.gif`, `navigation.png`, `cards/`, `maps/` (ROS) and `scene.rrd` (Rerun).
+- [`examples/real_office/`](examples/real_office): a real SceneDiff office pair (two chairs and a stool moved): viewer, evidence GIF, cards, maps, JSON.
+- [`examples/standard/`](examples/standard): all outputs of the synthetic standard scenario: `viewer.html` (download it and open it in a browser), `changes.json`, `evidence.gif`, `navigation.png`, `cards/`, `maps/` (ROS) and `scene.rrd` (Rerun).
 - [`examples/hard/`](examples/hard): the hard scenario, with the flat rug and the changes that must *not* be reported.
 - The input videos and ground truth are in [`data/`](data).
 
@@ -108,6 +134,11 @@ uv run python scripts/make_synthetic.py --scenario standard   # also: hard, noch
 uv run python scripts/benchmark.py                             # all 3 scenarios, full pipeline, writes docs/BENCHMARK.md
 uv run python scripts/ablation.py outputs/bench_standard        # free-space evidence vs naive point distances
 uv run pytest -q                                               # geometry, portrait, change logic, null test, abstention, rug
+
+# real-world benchmark (fetches only the selected pairs from the 12 GB archive via HTTP range requests)
+uv run python scripts/fetch_scenediff.py --from data/scenediff/test_selection.txt
+uv run python scripts/run_scenediff.py --split test $(cat data/scenediff/test_selection.txt)
+uv run python scripts/scenediff_report.py                      # writes docs/SCENEDIFF.md
 ```
 
 ## How it works
@@ -217,7 +248,7 @@ The result is what the camera *should* see if nothing had changed. Every change 
 ## Limitations
 - Depth networks see through glass and clear plastic. The appearance channel only checks surfaces that are geometrically static, so a removed glass is still likely to be missed.
 - Spots the before video saw only from far away (3 m or more) get low depth confidence and stay *unverifiable*, so a change there is not reported. In the benchmark's hard scenario this is how the backpack is missed. The next-best-view list points the robot back to such areas.
-- Objects smaller than about 10 cm give too few voxels to be detected reliably.
+- Small objects are the main weakness. On real data, objects covering under 3% of the image are mostly missed (21% recall for medium, 0% for small), because the 3D evidence works at ~2 cm voxels and needs several cameras to confirm each change.
 - People walking through a video are reported as added objects.
 - Metric scale comes from monocular depth, typically within about 10–25%. Passing a known measurement would fix it.
 - Rotation of nearly symmetric objects is ambiguous.
@@ -237,7 +268,8 @@ roomnesia/
   nav.py           two-layer occupancy, A* re-planning, next-best-view, ROS export
   viz.py           changes.json, cards, maps, GIF, 3D viewer (viewer_template.html)
   rerun_export.py  scene.rrd for the Rerun viewer
-scripts/           synthetic room renderer (3 scenarios), evaluation vs ground truth, benchmark, ablation
+scripts/           synthetic renderer (3 scenarios) + benchmark + ablation; SceneDiff fetch / run / evaluate / report;
+                   safe_pickle.py (annotation files are loaded as plain data only, never as code)
 tests/             pytest: geometry, portrait un-rotation, change logic, null test
 docs/              capture guide, README figures
 ```

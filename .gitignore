@@ -10,3 +10,6 @@ data/**/*_frames/
 
 # scratch runs; curated outputs live in examples/, benchmark results in docs/BENCHMARK.md
 outputs/
+
+# SceneDiff videos are fetched on demand (scripts/fetch_scenediff.py)
+data/scenediff/pairs/

@@ -213,6 +213,10 @@ def cluster_changes(cloud: Cloud, kind: str, eps: float, min_points: int, min_fr
         ext = np.ptp(np.percentile(cloud.xyz[c], [5, 95], axis=0), axis=0)
         if min(ext[0], ext[2]) < 0.8 * eps and ext[1] > 2 * min(ext[0], ext[2]):
             continue
+        # a 'change' spanning two dimensions of a wall (~1.5 m+) is the two reconstructions disagreeing
+        # about where a piece of the room is, not an object that appeared or disappeared
+        if np.sort(ext)[-2] > 20 * eps:
+            continue
         idx, frontier = c, c
         lo, hi = cloud.xyz[c].min(0) - eps, cloud.xyz[c].max(0) + eps
         lo[1] = max(lo[1], floor_clear)  # grow into object parts, never into the floor around it
@@ -319,19 +323,26 @@ def _apply_to_after(scene: dict, R: np.ndarray, t: np.ndarray):
 
 
 def detect(scene: dict, stride: int = 2, conf_pct: float = 25, tol_rel: float | None = None, win: int = 5,
-           min_points: int = 40, min_frames: int = 3, null_test: bool = True, min_confidence: float = 0.65):
-    """Run bidirectional change detection. Returns (cloud_a, cloud_b, clusters, info)."""
+           min_points: int = 40, min_frames: int = 3, null_test: bool = True, min_confidence: float = 0.65,
+           levels=(1.0, 1.5, 2.0, 3.0)):
+    """Run bidirectional change detection. Returns (cloud_a, cloud_b, clusters, info).
+
+    Operating point, all measured on this capture (nothing hand-tuned per scene):
+      1. tol_rel from the within-video depth noise (even vs odd frames);
+      2. tol_abs >= 2.5 x the before/after disagreement on agreed-static surfaces (after ICP);
+      3. the smallest multiplier in `levels` for which the null test - the same detector on even vs odd
+         frames of each video, where the truth is "nothing changed" - reports ZERO changes.
+    """
     conf_thr = np.percentile(scene["conf"], conf_pct)
     valid = np.stack([valid_mask(d, c, conf_thr) for d, c in zip(scene["depth"], scene["conf"])])
     med = float(np.median(scene["depth"][valid]))
     cal = calibrate(scene, valid)
-    tol_rel = tol_rel or cal["tol_rel"]
-    tol_abs = 0.01 * med
+    base_rel = tol_rel or cal["tol_rel"]
     eps = 0.035 * med  # ~7 cm for a typical 2 m viewing distance
     voxel = 0.01 * med  # ~2 cm
-    args = (tol_rel, tol_abs, win)
 
-    def run(sc, va):
+    def run(sc, va, t_rel, t_abs):
+        args = (t_rel, t_abs, win)
         a = fuse_voxels(evidence(build_cloud(sc, va, 0, stride), sc, va, 1, *args), voxel)
         b = fuse_voxels(evidence(build_cloud(sc, va, 1, stride), sc, va, 0, *args), voxel)
         fc = 2 * voxel  # room frame: floor at y = 0
@@ -340,28 +351,43 @@ def detect(scene: dict, stride: int = 2, conf_pct: float = 25, tol_rel: float | 
         # low-confidence candidates are kept aside (reported as 'uncertain'), never as changes
         return a, b, [c for c in cl if c.score >= min_confidence], [c for c in cl if c.score < min_confidence]
 
-    a, b, clusters, uncertain = run(scene, valid)
-    # refine the before/after alignment on agreed-static surfaces, keep it only if it helps
-    R, t, rmse0, rmse1 = refine_alignment(a, b, max_dist=3 * tol_rel * med)
-    icp = dict(rmse_before=rmse0, rmse_after=rmse1, shift=float(np.linalg.norm(t)),
-               rotation_deg=float(np.degrees(np.arccos(np.clip((np.trace(R) - 1) / 2, -1, 1)))), applied=False)
-    if np.isfinite(rmse1) and rmse1 < 0.95 * rmse0:
-        _apply_to_after(scene, R, t)
-        a, b, clusters, uncertain = run(scene, valid)
-        icp["applied"] = True
-    info = dict(valid=valid, median_depth=med, eps=eps, voxel=voxel, tol_rel=tol_rel, depth_noise=cal["sigma"], icp=icp,
-                uncertain=[dict(kind=c.kind, score=round(c.score, 2),
-                                position=np.round(np.median((a if c.kind == "removed" else b).xyz[c.idx], 0), 3).tolist())
-                           for c in uncertain])
-    if null_test:
-        # Self-test: split each recording into even/odd frames and run the SAME detector. Nothing changed
-        # between them, so whatever it reports is a measured false-alarm rate for this capture.
+    def null(t_rel, t_abs):
         nt = {}
         for r, name in ((0, "before"), (1, "after")):
             fr = np.where(scene["rec"] == r)[0]
             sub = _sub_scene(scene, fr, np.arange(len(fr)) % 2)
-            na, nb, ncl, _ = run(sub, valid[fr])
-            nt[name] = dict(false_changes=len(ncl),
-                            flagged_points=float(np.mean(np.r_[na.state, nb.state] == CHANGED)))
+            na, nb, ncl, _ = run(sub, valid[fr], t_rel, t_abs)
+            nt[name] = dict(false_changes=len(ncl), flagged_points=float(np.mean(np.r_[na.state, nb.state] == CHANGED)))
+        return nt
+
+    tol_abs = 0.01 * med
+    a, b, clusters, uncertain = run(scene, valid, base_rel, tol_abs)
+    # refine the before/after alignment on agreed-static surfaces, keep it only if it helps
+    R, t, rmse0, rmse1 = refine_alignment(a, b, max_dist=3 * base_rel * med)
+    icp = dict(rmse_before=rmse0, rmse_after=rmse1, shift=float(np.linalg.norm(t)),
+               rotation_deg=float(np.degrees(np.arccos(np.clip((np.trace(R) - 1) / 2, -1, 1)))), applied=False)
+    if np.isfinite(rmse1) and rmse1 < 0.95 * rmse0:
+        _apply_to_after(scene, R, t)
+        icp["applied"] = True
+    resid = rmse1 if icp["applied"] else rmse0
+    if np.isfinite(resid):  # the two videos never agree better than this on unchanged surfaces
+        tol_abs = max(tol_abs, 2.5 * resid)
+
+    level, nt = 1.0, None
+    if null_test:
+        # control the false-alarm rate: smallest tolerance level at which the null test is clean
+        for level in levels:
+            nt = null(base_rel * level, tol_abs * level)
+            if sum(v["false_changes"] for v in nt.values()) == 0:
+                break
+    tol_rel, tol_abs = base_rel * level, tol_abs * level
+    a, b, clusters, uncertain = run(scene, valid, tol_rel, tol_abs)
+    info = dict(valid=valid, median_depth=med, eps=eps, voxel=voxel, tol_rel=tol_rel, tol_abs=tol_abs,
+                depth_noise=cal["sigma"], icp=icp, tolerance_level=level,
+                reconstruction_ok=nt is None or sum(v["false_changes"] for v in nt.values()) == 0,
+                uncertain=[dict(kind=c.kind, score=round(c.score, 2),
+                                position=np.round(np.median((a if c.kind == "removed" else b).xyz[c.idx], 0), 3).tolist())
+                           for c in uncertain])
+    if nt is not None:
         info["null_test"] = nt
     return a, b, clusters, info

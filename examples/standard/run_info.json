@@ -16,7 +16,7 @@
     },
     "after": {
       "false_changes": 0,
-      "flagged_points": 0.00012609001499807546
+      "flagged_points": 3.981789947307646e-05
     }
   },
   "alignment_refinement": {
@@ -26,5 +26,8 @@
     "rotation_deg": 0.2711651294163455,
     "applied": true
   },
-  "seconds": 123.4
+  "tolerance_level": 1.0,
+  "tolerance_abs": 0.03921790768062304,
+  "reconstruction_ok": true,
+  "seconds": 121.4
 }

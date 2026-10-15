@@ -1,0 +1,36 @@
+{
+  "pair": "office_5_office_6",
+  "gt": 3,
+  "found": 3,
+  "type_correct": 2,
+  "predictions": 3,
+  "false_positives": 0,
+  "false_positive_kinds": [],
+  "false_positive_ids": [],
+  "objects": [
+    {
+      "label": "chair_1",
+      "kind": "moved",
+      "found": true,
+      "iou": 0.75,
+      "predicted_as": "moved",
+      "type_correct": true
+    },
+    {
+      "label": "chair_2",
+      "kind": "moved",
+      "found": true,
+      "iou": 0.58,
+      "predicted_as": "moved",
+      "type_correct": true
+    },
+    {
+      "label": "grey_chair_1",
+      "kind": "moved",
+      "found": true,
+      "iou": 0.27,
+      "predicted_as": "added",
+      "type_correct": false
+    }
+  ]
+}

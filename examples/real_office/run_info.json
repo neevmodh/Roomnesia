@@ -1,0 +1,33 @@
+{
+  "frames": 48,
+  "image_size": [
+    518,
+    294
+  ],
+  "metric_scale": 2.54903507232666,
+  "scale_source": "Depth Anything V2 (metric, indoor)",
+  "median_depth": 2.184318780899048,
+  "depth_noise": 0.015427203933817482,
+  "tolerance": 0.10799042753672237,
+  "null_test": {
+    "before": {
+      "false_changes": 0,
+      "flagged_points": 0.007133016816386014
+    },
+    "after": {
+      "false_changes": 0,
+      "flagged_points": 0.00687248576625254
+    }
+  },
+  "alignment_refinement": {
+    "rmse_before": 0.030154118706715204,
+    "rmse_after": 0.023779179224390986,
+    "shift": 0.03554455688229492,
+    "rotation_deg": 0.7453648301645335,
+    "applied": true
+  },
+  "tolerance_level": 2.0,
+  "tolerance_abs": 0.11889589612195493,
+  "reconstruction_ok": true,
+  "seconds": 123.0
+}

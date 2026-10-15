@@ -36,7 +36,10 @@ class Grid:
     after: np.ndarray
 
     def cell(self, xz: np.ndarray) -> np.ndarray:
-        return np.floor((np.asarray(xz) - self.origin) / self.res).astype(int)[..., ::-1]  # (row, col)
+        rc = np.floor((np.asarray(xz) - self.origin) / self.res).astype(int)[..., ::-1]  # (row, col)
+        if self.before is not None:
+            rc = np.clip(rc, 0, np.array(self.before.shape) - 1)
+        return rc
 
     def world(self, rc: np.ndarray) -> np.ndarray:
         rc = np.asarray(rc)
@@ -77,8 +80,10 @@ def build_grid(a: Cloud, b: Cloud, changes, scene: dict, res: float = 0.05, body
             _mark(b.xyz, c.points_to, in_change_b)
     lo_h, hi_h = body if scene.get("metric") else (0.04 * _height_span(a), 0.8 * _height_span(a))
     every = np.concatenate([a.xyz, b.xyz])
-    lo = every[:, [0, 2]].min(0) - 0.3
-    hi = every[:, [0, 2]].max(0) + 0.3
+    cams = cam_centers(scene["extrinsic"])[:, [0, 2]]
+    xz = np.concatenate([every[:, [0, 2]], cams])  # the map must contain where the people stood
+    lo = xz.min(0) - 0.3
+    hi = xz.max(0) + 0.3
     shape = tuple((np.ceil((hi - lo) / res).astype(int))[::-1])
     g = Grid(lo, res, None, None)
 

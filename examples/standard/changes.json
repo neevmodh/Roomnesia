@@ -6,76 +6,76 @@
       "id": 1,
       "type": "moved",
       "label": "box",
-      "label_confidence": 0.048,
+      "label_confidence": 0.065,
       "label_source": "detector+siglip",
       "place": "on the floor near the shelf",
       "place_after": "next to the desk",
       "description": "a green box",
       "sentence": "A green box was moved 1.5m, from the floor near the shelf to next to the desk (1.5m further away, as seen from where recording A started), and turned ~45\u00b0.",
-      "confidence": 0.996,
+      "confidence": 0.997,
       "position": [
         -1.205,
-        0.513,
+        0.524,
         0.088
       ],
       "position_after": [
         -2.704,
-        0.532,
+        0.533,
         -0.287
       ],
       "size_xyz": [
         0.286,
-        0.813,
+        0.792,
         0.497
       ],
-      "bottom_height": 0.106,
+      "bottom_height": 0.128,
       "displacement": 1.545,
-      "rotation_deg": -45.3,
+      "rotation_deg": -45.1,
       "navigation": "adds 1.3 m to the route walked in A"
     },
     {
       "id": 2,
       "type": "added",
       "label": "box",
-      "label_confidence": 0.228,
+      "label_confidence": 0.223,
       "label_source": "detector+siglip",
       "place": "on the floor near the shelf",
       "description": "a box",
       "sentence": "A box (~0.4m wide, 0.4m tall) appeared on the floor near the shelf.",
-      "confidence": 0.863,
+      "confidence": 0.864,
       "position": [
         -1.056,
-        0.303,
+        0.305,
         -2.493
       ],
       "size_xyz": [
-        0.417,
-        0.401,
+        0.419,
+        0.398,
         0.369
       ],
-      "bottom_height": 0.103
+      "bottom_height": 0.106
     },
     {
       "id": 3,
       "type": "removed",
       "label": "box",
-      "label_confidence": 0.018,
+      "label_confidence": 0.014,
       "label_source": "detector+siglip",
       "place": "on the floor near the desk",
       "description": "a black cube",
-      "sentence": "A black cube (~0.3m wide, 0.4m tall) was removed from the floor near the desk.",
-      "confidence": 0.736,
+      "sentence": "A black cube (~0.3m wide, 0.3m tall) was removed from the floor near the desk.",
+      "confidence": 0.735,
       "position": [
         -3.244,
         0.282,
-        -1.657
+        -1.655
       ],
       "size_xyz": [
         0.232,
-        0.351,
-        0.334
+        0.35,
+        0.332
       ],
-      "bottom_height": 0.106
+      "bottom_height": 0.107
     }
   ],
   "routes": [
@@ -106,7 +106,7 @@
         -2.821
       ],
       "yaw_deg": -131.0,
-      "unverified_area_m2": 10.04,
+      "unverified_area_m2": 10.02,
       "sentence": "Stand 1.5m ahead of and 2.5m right of where recording A started, facing to the left: this would check ~10.0 m\u00b2 of surface neither video could verify."
     },
     {
@@ -116,8 +116,8 @@
         -1.071
       ],
       "yaw_deg": 91.0,
-      "unverified_area_m2": 4.8,
-      "sentence": "Stand 3.6m ahead of and 0.1m right of where recording A started, facing back towards the start: this would check ~4.8 m\u00b2 of surface neither video could verify."
+      "unverified_area_m2": 4.63,
+      "sentence": "Stand 3.6m ahead of and 0.1m right of where recording A started, facing back towards the start: this would check ~4.6 m\u00b2 of surface neither video could verify."
     },
     {
       "position": [
@@ -126,7 +126,7 @@
         1.429
       ],
       "yaw_deg": -47.0,
-      "unverified_area_m2": 4.54,
+      "unverified_area_m2": 4.55,
       "sentence": "Stand 0.2m behind and 1.4m left of where recording A started, facing ahead: this would check ~4.5 m\u00b2 of surface neither video could verify."
     }
   ],
@@ -140,7 +140,7 @@
       },
       "after": {
         "false_changes": 0,
-        "flagged_points": 0.00012609001499807546
+        "flagged_points": 3.981789947307646e-05
       }
     },
     "alignment_refinement": {
