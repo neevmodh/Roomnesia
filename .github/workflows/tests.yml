@@ -15,8 +15,6 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install (CPU-only PyTorch; the tests need no model weights)
-        run: |
-          uv venv
-          uv pip install --torch-backend cpu -e . pytest
+        run: uv pip install --torch-backend cpu -e . pytest  # setup-uv already created .venv
       - name: Run tests (geometry, portrait un-rotation, change logic, null test, abstention, appearance)
         run: uv run --no-sync pytest -q
