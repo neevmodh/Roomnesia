@@ -108,14 +108,21 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 const centre = D.lo.map((l, k) => l + D.span[k] / 2);
-camera.position.set(centre[0], centre[1] + D.span[1] * 2.2 + 1, centre[2] - Math.max(D.span[0], D.span[2]) * 0.9);
-controls.target.set(centre[0], 0, centre[2]);
 
 function cloud(rec) {
   const p = deq(b64(rec.p, Int16Array)), c = b64(rec.c, Uint8Array), s = b64(rec.s, Uint8Array);
   return { p, c, s };
 }
 const A = cloud(D.a), B = cloud(D.b);
+{ // frame the initial view on where the points (and the changes) actually are, not the padded bounding box
+  const n = A.p.length / 3, step = Math.max(1, Math.floor(n / 4000)), xs = [], ys = [], zs = [];
+  for (let i = 0; i < n; i += step) { xs.push(A.p[3 * i]); ys.push(A.p[3 * i + 1]); zs.push(A.p[3 * i + 2]); }
+  const q = (a, f) => { const s = [...a].sort((u, v) => u - v); return s[Math.floor(f * (s.length - 1))]; };
+  const c = [q(xs, .5), q(ys, .5), q(zs, .5)];
+  const r = Math.max(q(xs, .9) - q(xs, .1), q(zs, .9) - q(zs, .1), 1.0);
+  controls.target.set(c[0], Math.max(0, c[1] * 0.5), c[2]);
+  camera.position.set(c[0] + 0.35 * r, c[1] + 1.1 * r + 0.5, c[2] + 1.05 * r);
+}
 
 function makePoints(P, colorFn, size = 0.012, filter = () => true) {
   const n = P.p.length / 3, pos = [], col = [];
