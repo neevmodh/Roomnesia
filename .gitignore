@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.pytest_cache/
+
+# large intermediates (the VGGT reconstruction cache, ~110 MB per run)
+**/scene.npz
+data/**/*_frames/
+
+# scratch runs; curated outputs live in examples/, benchmark results in docs/BENCHMARK.md
+outputs/

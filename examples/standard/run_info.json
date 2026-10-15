@@ -1,0 +1,30 @@
+{
+  "frames": 48,
+  "image_size": [
+    294,
+    518
+  ],
+  "metric_scale": 2.724594381744852,
+  "scale_source": "camera height 1.375 m",
+  "median_depth": 2.34194278717041,
+  "depth_noise": 0.011637245956713666,
+  "tolerance": 0.04073036084849783,
+  "null_test": {
+    "before": {
+      "false_changes": 0,
+      "flagged_points": 6.832036998108052e-05
+    },
+    "after": {
+      "false_changes": 0,
+      "flagged_points": 0.00012609001499807546
+    }
+  },
+  "alignment_refinement": {
+    "rmse_before": 0.016865008568372017,
+    "rmse_after": 0.015687163072249218,
+    "shift": 0.01947946330489975,
+    "rotation_deg": 0.2711651294163455,
+    "applied": true
+  },
+  "seconds": 123.4
+}

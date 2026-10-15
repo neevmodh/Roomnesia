@@ -1,0 +1,24 @@
+{
+  "recall": 1.0,
+  "precision": 1.0,
+  "matches": [
+    {
+      "gt": "moved chair",
+      "found": true,
+      "error_m": 0.042
+    },
+    {
+      "gt": "removed bin",
+      "found": true,
+      "error_m": 0.135
+    },
+    {
+      "gt": "added backpack",
+      "found": true,
+      "error_m": 0.095
+    }
+  ],
+  "abstentions": [],
+  "false_positives": 0,
+  "reported": 3
+}

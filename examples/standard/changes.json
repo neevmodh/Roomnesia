@@ -1,0 +1,155 @@
+{
+  "units": "m",
+  "frame": "room frame: y up, floor at y=0, x/z aligned to the walls (right-handed), origin on the floor under the first camera of recording A",
+  "changes": [
+    {
+      "id": 1,
+      "type": "moved",
+      "label": "box",
+      "label_confidence": 0.048,
+      "label_source": "detector+siglip",
+      "place": "on the floor near the shelf",
+      "place_after": "next to the desk",
+      "description": "a green box",
+      "sentence": "A green box was moved 1.5m, from the floor near the shelf to next to the desk (1.5m further away, as seen from where recording A started), and turned ~45\u00b0.",
+      "confidence": 0.996,
+      "position": [
+        -1.205,
+        0.513,
+        0.088
+      ],
+      "position_after": [
+        -2.704,
+        0.532,
+        -0.287
+      ],
+      "size_xyz": [
+        0.286,
+        0.813,
+        0.497
+      ],
+      "bottom_height": 0.106,
+      "displacement": 1.545,
+      "rotation_deg": -45.3,
+      "navigation": "adds 1.3 m to the route walked in A"
+    },
+    {
+      "id": 2,
+      "type": "added",
+      "label": "box",
+      "label_confidence": 0.228,
+      "label_source": "detector+siglip",
+      "place": "on the floor near the shelf",
+      "description": "a box",
+      "sentence": "A box (~0.4m wide, 0.4m tall) appeared on the floor near the shelf.",
+      "confidence": 0.863,
+      "position": [
+        -1.056,
+        0.303,
+        -2.493
+      ],
+      "size_xyz": [
+        0.417,
+        0.401,
+        0.369
+      ],
+      "bottom_height": 0.103
+    },
+    {
+      "id": 3,
+      "type": "removed",
+      "label": "box",
+      "label_confidence": 0.018,
+      "label_source": "detector+siglip",
+      "place": "on the floor near the desk",
+      "description": "a black cube",
+      "sentence": "A black cube (~0.3m wide, 0.4m tall) was removed from the floor near the desk.",
+      "confidence": 0.736,
+      "position": [
+        -3.244,
+        0.282,
+        -1.657
+      ],
+      "size_xyz": [
+        0.232,
+        0.351,
+        0.334
+      ],
+      "bottom_height": 0.106
+    }
+  ],
+  "routes": [
+    {
+      "name": "route walked in A",
+      "status": "detour",
+      "sentence": "The route walked in A now needs a 1.3 m detour by #1 box (4.5 m -> 5.9 m).",
+      "caused_by": [
+        1
+      ],
+      "length_before": 4.51,
+      "length_after": 5.86
+    },
+    {
+      "name": "route walked in B",
+      "status": "unchanged",
+      "sentence": "The route walked in B is unaffected (5.2 m).",
+      "caused_by": [],
+      "length_before": 5.22,
+      "length_after": 5.18
+    }
+  ],
+  "next_best_views": [
+    {
+      "position": [
+        -0.725,
+        1.378,
+        -2.821
+      ],
+      "yaw_deg": -131.0,
+      "unverified_area_m2": 10.04,
+      "sentence": "Stand 1.5m ahead of and 2.5m right of where recording A started, facing to the left: this would check ~10.0 m\u00b2 of surface neither video could verify."
+    },
+    {
+      "position": [
+        -3.475,
+        1.378,
+        -1.071
+      ],
+      "yaw_deg": 91.0,
+      "unverified_area_m2": 4.8,
+      "sentence": "Stand 3.6m ahead of and 0.1m right of where recording A started, facing back towards the start: this would check ~4.8 m\u00b2 of surface neither video could verify."
+    },
+    {
+      "position": [
+        -0.225,
+        1.378,
+        1.429
+      ],
+      "yaw_deg": -47.0,
+      "unverified_area_m2": 4.54,
+      "sentence": "Stand 0.2m behind and 1.4m left of where recording A started, facing ahead: this would check ~4.5 m\u00b2 of surface neither video could verify."
+    }
+  ],
+  "self_check": {
+    "depth_noise": 0.0116,
+    "tolerance": 0.0407,
+    "null_test": {
+      "before": {
+        "false_changes": 0,
+        "flagged_points": 6.832036998108052e-05
+      },
+      "after": {
+        "false_changes": 0,
+        "flagged_points": 0.00012609001499807546
+      }
+    },
+    "alignment_refinement": {
+      "rmse_before": 0.016865008568372017,
+      "rmse_after": 0.015687163072249218,
+      "shift": 0.01947946330489975,
+      "rotation_deg": 0.2711651294163455,
+      "applied": true
+    }
+  },
+  "uncertain_candidates": []
+}

@@ -1,0 +1,130 @@
+{
+  "units": "m",
+  "frame": "room frame: y up, floor at y=0, x/z aligned to the walls (right-handed), origin on the floor under the first camera of recording A",
+  "changes": [
+    {
+      "id": 1,
+      "type": "moved",
+      "label": "desk",
+      "label_confidence": 0.082,
+      "label_source": "detector",
+      "place": "next to the door",
+      "place_after": "next to the desk",
+      "description": "a green box",
+      "sentence": "A green box was moved 1.4m, from next to the door to next to the desk (1.4m further away, as seen from where recording A started), and turned ~39\u00b0.",
+      "confidence": 0.993,
+      "position": [
+        -0.722,
+        0.511,
+        -1.156
+      ],
+      "position_after": [
+        -1.053,
+        0.512,
+        -2.553
+      ],
+      "size_xyz": [
+        0.512,
+        0.736,
+        0.367
+      ],
+      "bottom_height": 0.143,
+      "displacement": 1.437,
+      "rotation_deg": -38.7
+    },
+    {
+      "id": 2,
+      "type": "appearance",
+      "label": "mat",
+      "label_confidence": 0.008,
+      "label_source": "siglip",
+      "place": "on the floor next to the desk",
+      "description": "a red mat",
+      "sentence": "A red mat on the floor next to the desk was removed or replaced: a flat change (shape unchanged, colour changed over ~0.7 x 0.7m).",
+      "confidence": 0.984,
+      "position": [
+        -0.401,
+        0.044,
+        -1.897
+      ],
+      "size_xyz": [
+        0.694,
+        0.103,
+        0.735
+      ],
+      "bottom_height": -0.007
+    }
+  ],
+  "routes": [
+    {
+      "name": "route walked in A",
+      "status": "unchanged",
+      "sentence": "The route walked in A is unaffected (6.1 m).",
+      "caused_by": [],
+      "length_before": 6.13,
+      "length_after": 6.13
+    },
+    {
+      "name": "route walked in B",
+      "status": "unchanged",
+      "sentence": "The route walked in B is unaffected (5.2 m).",
+      "caused_by": [],
+      "length_before": 5.23,
+      "length_after": 5.23
+    }
+  ],
+  "next_best_views": [
+    {
+      "position": [
+        -0.612,
+        1.375,
+        0.087
+      ],
+      "yaw_deg": 5.0,
+      "unverified_area_m2": 5.96,
+      "sentence": "Stand 0.1m ahead of and 0.6m left of where recording A started, facing ahead: this would check ~6.0 m\u00b2 of surface neither video could verify."
+    },
+    {
+      "position": [
+        1.138,
+        1.375,
+        -4.163
+      ],
+      "yaw_deg": -161.0,
+      "unverified_area_m2": 7.63,
+      "sentence": "Stand 3.8m ahead of and 2.0m right of where recording A started, facing back towards the start: this would check ~7.6 m\u00b2 of surface neither video could verify."
+    },
+    {
+      "position": [
+        -1.112,
+        1.375,
+        -1.413
+      ],
+      "yaw_deg": 41.0,
+      "unverified_area_m2": 4.75,
+      "sentence": "Stand 1.6m ahead of and 0.8m left of where recording A started, facing to the right: this would check ~4.8 m\u00b2 of surface neither video could verify."
+    }
+  ],
+  "self_check": {
+    "depth_noise": 0.0207,
+    "tolerance": 0.0725,
+    "null_test": {
+      "before": {
+        "false_changes": 0,
+        "flagged_points": 0.000563817924398281
+      },
+      "after": {
+        "false_changes": 0,
+        "flagged_points": 0.005122554478425488
+      }
+    },
+    "alignment_refinement": {
+      "rmse_before": 0.03444217765237026,
+      "rmse_after": 0.028485715578464087,
+      "shift": 0.05779401701845175,
+      "rotation_deg": 0.6199659986436364,
+      "applied": true
+    }
+  },
+  "uncertain_candidates": []
+}

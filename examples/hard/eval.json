@@ -1,0 +1,40 @@
+{
+  "recall": 0.6666666666666666,
+  "precision": 1.0,
+  "matches": [
+    {
+      "gt": "moved chair",
+      "found": true,
+      "error_m": 0.097
+    },
+    {
+      "gt": "added backpack",
+      "found": false,
+      "error_m": null
+    },
+    {
+      "gt": "appearance rug",
+      "found": true,
+      "error_m": 0.157
+    }
+  ],
+  "abstentions": [
+    {
+      "object": "plant",
+      "reason": "removed where the after-video never looked",
+      "correctly_not_reported": true
+    },
+    {
+      "object": "crate",
+      "reason": "removed behind the cabinet in every after-frame",
+      "correctly_not_reported": true
+    },
+    {
+      "object": "bin",
+      "reason": "never visible in video A",
+      "correctly_not_reported": true
+    }
+  ],
+  "false_positives": 0,
+  "reported": 2
+}

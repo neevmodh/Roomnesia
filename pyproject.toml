@@ -1,0 +1,52 @@
+[project]
+name = "roomnesia"
+version = "0.1.0"
+description = "What changed in the room? 3D change detection from two phone videos, and what it means for a robot."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "einops>=0.8.2",
+    "huggingface-hub>=2.2.0",
+    "matplotlib>=3.11.2",
+    "num2words>=0.5.14",
+    "numpy>=1.26.4",
+    "opencv-python>=4.11.0.86",
+    "pillow>=12.3.0",
+    "protobuf>=7.36.2",
+    "pyarrow<19",
+    "rerun-sdk>=0.23.1",
+    "safetensors>=0.8.0",
+    "scikit-learn>=1.9.1",
+    "scipy>=1.17.1",
+    "sentencepiece>=0.2.2",
+    "torch>=2.14.1",
+    "torchvision>=0.29.1",
+    "tqdm>=4.70.1",
+    "transformers>=5.19.0",
+    "vggt",
+]
+
+[project.scripts]
+roomnesia = "roomnesia.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["roomnesia"]
+
+[tool.uv.sources]
+vggt = { git = "https://github.com/facebookresearch/vggt" }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+# numpy on macOS/Accelerate emits spurious matmul RuntimeWarnings
+filterwarnings = ["ignore::RuntimeWarning"]

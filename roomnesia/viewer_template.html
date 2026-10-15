@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roomnesia Viewer</title>
+<style>
+  :root {
+    --bg: #f4f3ef; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #e3e1db;
+    --removed: #e63946; --added: #2a9d5c; --moved: #f08c00; --moved-to: #286edc; --scene: #15171c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #101114; --panel: #191a1f; --ink: #ececf0; --muted: #9a9aa3; --line: #2a2b31; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font: 14px/1.45 ui-sans-serif, -apple-system, "Segoe UI", sans-serif; }
+  #app { display: grid; grid-template-columns: 1fr 360px; height: 100vh; }
+  #stage { position: relative; background: var(--scene); overflow: hidden; }
+  canvas { display: block; }
+  #bar { position: absolute; top: 12px; left: 12px; display: flex; gap: 6px; flex-wrap: wrap; z-index: 2; }
+  #bar button, #bar label { background: rgba(255,255,255,.1); color: #eee; border: 1px solid rgba(255,255,255,.18);
+    border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 13px; cursor: pointer; backdrop-filter: blur(6px); }
+  #bar button.on { background: #fff; color: #111; }
+  #bar label { display: flex; gap: 6px; align-items: center; }
+  .tag { position: absolute; transform: translate(-50%, -120%); padding: 2px 8px; border-radius: 999px; color: #fff;
+    font-size: 12px; font-weight: 600; white-space: nowrap; pointer-events: auto; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,.35); z-index: 1; }
+  #legend { position: absolute; bottom: 12px; left: 12px; color: #ddd; font-size: 12px; display: flex; gap: 12px; flex-wrap: wrap; }
+  #legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  aside { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; padding: 16px; }
+  h1 { font-size: 17px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 12.5px; margin-bottom: 14px; }
+  .card { border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 10px; cursor: pointer; }
+  .card:hover { border-color: var(--muted); }
+  .card .k { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .card .s { margin: 4px 0 6px; }
+  .card .n { font-size: 12px; color: var(--muted); }
+  .imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .imgs figure { margin: 0; }
+  .imgs img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; background: var(--line); }
+  .ev { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+  .ev img { width: 100%; border-radius: 6px; }
+  .imgs figcaption { font-size: 11px; color: var(--muted); }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 18px 0 8px; }
+  .robot { border-left: 3px solid var(--line); padding: 4px 0 4px 10px; margin-bottom: 8px; font-size: 13px; cursor: pointer; }
+  .robot.blocked { border-color: var(--removed); } .robot.detour { border-color: var(--moved); }
+  .robot.look { border-color: #e67e22; }
+  @media (max-width: 760px) {
+    #app { grid-template-columns: 1fr; grid-template-rows: 60vh auto; height: auto; }
+    aside { border-left: 0; border-top: 1px solid var(--line); padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <div id="bar">
+      <button data-mode="changes" class="on">Changes</button>
+      <button data-mode="before">Before (A)</button>
+      <button data-mode="after">After (B)</button>
+      <label><input type="checkbox" id="unobs"> unverified areas</label>
+      <label><input type="checkbox" id="paths" checked> camera paths</label>
+      <label><input type="checkbox" id="robot" checked> robot routes &amp; look-here</label>
+      <label>replay <input type="range" id="t" min="0" max="1" step="0.01" value="1" style="width:110px"></label>
+      <button id="play">▶ play</button>
+    </div>
+    <div id="legend">
+      <span><i style="background:var(--removed)"></i>removed</span>
+      <span><i style="background:var(--added)"></i>added</span>
+      <span><i style="background:var(--moved)"></i>moved (before)</span>
+      <span><i style="background:var(--moved-to)"></i>moved (after)</span>
+      <span><i style="background:#9b59b6"></i>looks different (flat)</span>
+      <span><i style="background:#b48cff"></i>not verifiable</span>
+    </div>
+  </div>
+  <aside>
+    <h1>Roomnesia: what changed?</h1>
+    <div class="sub" id="sub"></div>
+    <div id="list"></div>
+    <h2>Robot view</h2>
+    <div id="robotlist"></div>
+  </aside>
+</div>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const D = /*__DATA__*/null;
+const b64 = (s, T) => { const b = Uint8Array.from(atob(s), c => c.charCodeAt(0)); return new T(b.buffer); };
+const deq = q => { const p = new Float32Array(q.length);
+  for (let i = 0; i < q.length; i++) { const k = i % 3; p[i] = (q[i] + 32768) / 65535 * D.span[k] + D.lo[k]; } return p; };
+
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+stage.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x15171c);
+const camera = new THREE.PerspectiveCamera(55, 1, 0.01, 200);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+const centre = D.lo.map((l, k) => l + D.span[k] / 2);
+camera.position.set(centre[0], centre[1] + D.span[1] * 2.2 + 1, centre[2] - Math.max(D.span[0], D.span[2]) * 0.9);
+controls.target.set(centre[0], 0, centre[2]);
+
+function cloud(rec) {
+  const p = deq(b64(rec.p, Int16Array)), c = b64(rec.c, Uint8Array), s = b64(rec.s, Uint8Array);
+  return { p, c, s };
+}
+const A = cloud(D.a), B = cloud(D.b);
+
+function makePoints(P, colorFn, size = 0.012, filter = () => true) {
+  const n = P.p.length / 3, pos = [], col = [];
+  for (let i = 0; i < n; i++) {
+    if (!filter(i)) continue;
+    pos.push(P.p[3 * i], P.p[3 * i + 1], P.p[3 * i + 2]);
+    const c = colorFn(i); col.push(c[0], c[1], c[2]);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  return new THREE.Points(g, new THREE.PointsMaterial({ size, vertexColors: true, sizeAttenuation: true }));
+}
+const real = P => i => [P.c[3 * i] / 255, P.c[3 * i + 1] / 255, P.c[3 * i + 2] / 255];
+const grey = P => i => { const l = (0.3 * P.c[3 * i] + 0.59 * P.c[3 * i + 1] + 0.11 * P.c[3 * i + 2]) / 255; const v = 0.25 + 0.45 * l; return [v, v, v * 1.03]; };
+const UNOBS = 2;
+
+const layers = {
+  beforeReal: makePoints(A, real(A)),
+  afterReal: makePoints(B, real(B)),
+  greyA: makePoints(A, grey(A), 0.011, i => A.s[i] !== UNOBS),
+  greyB: makePoints(B, grey(B), 0.011, i => B.s[i] !== UNOBS),
+  unobs: (() => { const g = new THREE.Group();
+    g.add(makePoints(A, () => [0.7, 0.55, 1], 0.011, i => A.s[i] === UNOBS));
+    g.add(makePoints(B, () => [0.7, 0.55, 1], 0.011, i => B.s[i] === UNOBS)); return g; })(),
+};
+Object.values(layers).forEach(l => scene.add(l));
+
+const hex = h => new THREE.Color(h);
+const changeGroup = new THREE.Group(); scene.add(changeGroup);
+const tags = [];
+const anim = [];
+for (const ch of D.changes) {
+  const p0 = { p: deq(b64(ch.p0, Int16Array)) };
+  const col = hex(ch.color);
+  const pts = makePoints(p0, () => [col.r, col.g, col.b], 0.02);
+  pts.material.transparent = true;
+  changeGroup.add(pts);
+  if (ch.kind === "moved") {
+    // a ghost copy that slides + turns from the old pose to the new one when replaying
+    const ghost = makePoints(p0, () => [1, 1, 1], 0.018);
+    ghost.material.transparent = true; ghost.material.opacity = 0.9; ghost.visible = false;
+    changeGroup.add(ghost);
+    anim.push({ ch, pts, ghost });
+  } else anim.push({ ch, pts });
+  let anchor = ch.c0;
+  if (ch.kind === "moved") {
+    const c1 = hex("#286edc");
+    const after = makePoints({ p: deq(b64(ch.p1, Int16Array)) }, () => [c1.r, c1.g, c1.b], 0.02);
+    after.material.transparent = true;
+    changeGroup.add(after);
+    anim[anim.length - 1].after = after;
+    const from = new THREE.Vector3(...ch.c0), to = new THREE.Vector3(...ch.c1);
+    const dir = to.clone().sub(from), len = dir.length();
+    const arrow = new THREE.ArrowHelper(dir.normalize(), from, len, 0xffffff, Math.min(0.25, len * 0.3), Math.min(0.12, len * 0.15));
+    changeGroup.add(arrow);
+    anchor = ch.c1;
+  }
+  const el = document.createElement("div");
+  el.className = "tag"; el.style.background = ch.color; el.textContent = `${ch.id}. ${ch.label}`;
+  el.onclick = () => focus(ch);
+  stage.appendChild(el);
+  tags.push({ el, pos: new THREE.Vector3(...anchor).add(new THREE.Vector3(0, 0.15, 0)) });
+}
+
+const pathGroup = new THREE.Group(); scene.add(pathGroup);
+for (const [r, colr] of [[0, 0x5b8fd6], [1, 0xb07ad9]]) {
+  const pts = D.cams[r].map(c => new THREE.Vector3(...c));
+  pathGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: colr })));
+  const s = new THREE.Mesh(new THREE.SphereGeometry(0.04), new THREE.MeshBasicMaterial({ color: colr }));
+  s.position.copy(pts[0]); pathGroup.add(s);
+}
+const grid = new THREE.GridHelper(Math.ceil(Math.max(D.span[0], D.span[2]) + 2), Math.ceil(Math.max(D.span[0], D.span[2]) + 2), 0x444a55, 0x2a2e36);
+grid.position.set(centre[0], 0, centre[2]); scene.add(grid);
+
+const robotGroup = new THREE.Group(); scene.add(robotGroup);
+for (const r of D.routes || []) {
+  const mk = (pts, color, dashed) => {
+    if (!pts || pts.length < 2) return;
+    const g = new THREE.BufferGeometry().setFromPoints(pts.map(p => new THREE.Vector3(p[0], 0.03, p[1])));
+    const m = dashed ? new THREE.LineDashedMaterial({ color, dashSize: 0.08, gapSize: 0.06 }) : new THREE.LineBasicMaterial({ color });
+    const l = new THREE.Line(g, m); if (dashed) l.computeLineDistances(); robotGroup.add(l);
+  };
+  mk(r.before, 0x8a8f99, true);
+  mk(r.after, r.status === "blocked" ? 0xe63946 : 0x00d1b2, false);
+}
+for (const v of D.views || []) {
+  const eye = new THREE.Vector3(...v.p), yaw = v.yaw * Math.PI / 180;
+  const dir = (a, e) => new THREE.Vector3(Math.sin(a), e, -Math.cos(a)).normalize().multiplyScalar(0.6).add(eye);
+  const c = [dir(yaw - .55, .35), dir(yaw + .55, .35), dir(yaw + .55, -.35), dir(yaw - .55, -.35)];
+  const pts = [eye, c[0], eye, c[1], eye, c[2], eye, c[3], c[0], c[1], c[1], c[2], c[2], c[3], c[3], c[0]];
+  robotGroup.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xff9f43 })));
+  const s = new THREE.Mesh(new THREE.SphereGeometry(0.05), new THREE.MeshBasicMaterial({ color: 0xff9f43 }));
+  s.position.copy(eye); robotGroup.add(s);
+}
+
+function setT(t) {
+  for (const a of anim) {
+    const ch = a.ch;
+    if (ch.kind === "removed") a.pts.material.opacity = 1 - 0.55 * t;
+    else if (ch.kind === "added") a.pts.material.opacity = 0.15 + 0.85 * t;
+    else {
+      a.pts.material.opacity = 1 - 0.5 * t; a.after.material.opacity = 0.15 + 0.85 * t;
+      a.ghost.visible = t > 0.01 && t < 0.99;
+      const c0 = new THREE.Vector3(...ch.c0), c1 = new THREE.Vector3(...ch.c1);
+      const yaw = (ch.yaw || 0) * Math.PI / 180 * t;
+      a.ghost.position.set(0, 0, 0); a.ghost.rotation.set(0, 0, 0); a.ghost.updateMatrix();
+      const m = new THREE.Matrix4().makeTranslation(-c0.x, 0, -c0.z)
+        .premultiply(new THREE.Matrix4().makeRotationY(-yaw))
+        .premultiply(new THREE.Matrix4().makeTranslation(c0.x + (c1.x - c0.x) * t, 0, c0.z + (c1.z - c0.z) * t));
+      a.ghost.matrixAutoUpdate = false; a.ghost.matrix.copy(m);
+    }
+  }
+}
+const slider = document.getElementById("t");
+slider.oninput = () => setT(+slider.value);
+let playing = null;
+document.getElementById("play").onclick = () => {
+  if (playing) { cancelAnimationFrame(playing); playing = null; return; }
+  const t0 = performance.now();
+  const step = now => { const t = Math.min(1, (now - t0) / 2500); slider.value = t; setT(t); playing = t < 1 ? requestAnimationFrame(step) : null; };
+  mode = "changes"; apply(); playing = requestAnimationFrame(step);
+};
+setT(1);
+
+let mode = "changes";
+function apply() {
+  const unobs = document.getElementById("unobs").checked;
+  layers.beforeReal.visible = mode === "before";
+  layers.afterReal.visible = mode === "after";
+  layers.greyA.visible = layers.greyB.visible = mode === "changes";
+  layers.unobs.visible = unobs;
+  changeGroup.visible = mode === "changes";
+  tags.forEach(t => t.el.style.display = mode === "changes" ? "" : "none");
+  pathGroup.visible = document.getElementById("paths").checked;
+  robotGroup.visible = document.getElementById("robot").checked;
+  document.querySelectorAll("#bar button").forEach(b => b.classList.toggle("on", b.dataset.mode === mode));
+}
+document.querySelectorAll("#bar button").forEach(b => b.onclick = () => { mode = b.dataset.mode; apply(); });
+document.getElementById("unobs").onchange = apply;
+document.getElementById("paths").onchange = apply;
+document.getElementById("robot").onchange = apply;
+apply();
+
+let fly = null;
+function focus(ch) {
+  const t = new THREE.Vector3(...(ch.c1 || ch.c0));
+  const off = camera.position.clone().sub(controls.target).normalize().multiplyScalar(2.2);
+  fly = { t0: performance.now(), fromT: controls.target.clone(), toT: t, fromP: camera.position.clone(), toP: t.clone().add(off) };
+  mode = "changes"; apply();
+}
+
+const list = document.getElementById("list");
+document.getElementById("sub").textContent =
+  `${D.changes.length} change(s) detected · units: ${D.unit} · drag to orbit, scroll to zoom, click a change to fly to it`;
+for (const ch of D.changes) {
+  const d = document.createElement("div");
+  d.className = "card";
+  const img = (k, cap) => ch[k] ? `<figure><img src="${ch[k]}" alt="${cap}"><figcaption>${cap}</figcaption></figure>` : `<figure><div style="aspect-ratio:1;border-radius:6px;background:var(--line)"></div><figcaption>${cap}: not observed</figcaption></figure>`;
+  d.innerHTML = `<div class="k" style="color:${ch.color}">${ch.id}. ${ch.kind} · ${ch.label}</div>
+    <div class="s">${ch.sentence}</div>
+    ${ch.nav ? `<div class="n">🤖 ${ch.nav}</div>` : ""}
+    <div class="imgs">${img("before", "before (video A)")}${img("after", "after (video B)")}</div>
+    ${(ch.evidence || []).map(e => `<div class="n" style="margin-top:8px">same viewpoint, ${e.name}: expected from memory → actual</div>
+      <div class="ev"><img src="${e.expected}" alt="expected"><img src="${e.actual}" alt="actual"></div>`).join("")}`;
+  d.onclick = () => focus(ch);
+  list.appendChild(d);
+}
+
+const rl = document.getElementById("robotlist");
+for (const r of D.routes || []) {
+  const d = document.createElement("div"); d.className = `robot ${r.status}`; d.textContent = "🛣️ " + r.sentence; rl.appendChild(d);
+}
+(D.views || []).forEach((v, i) => {
+  const d = document.createElement("div"); d.className = "robot look"; d.textContent = `👁️ look #${i + 1}: ${v.sentence}`;
+  d.onclick = () => focus({ c0: v.p }); rl.appendChild(d);
+});
+
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener("resize", resize); resize();
+
+const v = new THREE.Vector3();
+renderer.setAnimationLoop(now => {
+  if (fly) {
+    const k = Math.min(1, (now - fly.t0) / 900), e = k * k * (3 - 2 * k);
+    controls.target.lerpVectors(fly.fromT, fly.toT, e);
+    camera.position.lerpVectors(fly.fromP, fly.toP, e);
+    if (k >= 1) fly = null;
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  const w = stage.clientWidth, h = stage.clientHeight;
+  for (const t of tags) {
+    v.copy(t.pos).project(camera);
+    const vis = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1;
+    t.el.style.visibility = vis ? "visible" : "hidden";
+    t.el.style.left = `${(v.x + 1) / 2 * w}px`; t.el.style.top = `${(1 - v.y) / 2 * h}px`;
+  }
+});
+</script>
+</body>
+</html>
