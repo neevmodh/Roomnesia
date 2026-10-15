@@ -1,5 +1,8 @@
 # Roomnesia: what changed in the room, and what it means for a robot
 
+[![tests](https://github.com/neevmodh/Roomnesia/actions/workflows/tests.yml/badge.svg)](https://github.com/neevmodh/Roomnesia/actions/workflows/tests.yml)
+**[▶ Live 3D demo](https://neevmodh.github.io/Roomnesia/)** (no install) · [real-world benchmark](#real-world-benchmark-scenediff) · [how it works](#how-it-works)
+
 *Room + amnesia: a robot's memory of a room goes out of date the moment someone moves a chair. Roomnesia works out exactly what changed, proves each change from the camera's own viewpoint, and says what it means for navigation.*
 
 ![real office: expected (memory of video A rendered from a video-B camera) vs actual vs changes](docs/img/real_evidence.gif)

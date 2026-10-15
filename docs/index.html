@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roomnesia Demo</title>
+<style>
+  :root { --bg: #f6f5f1; --card: #fff; --ink: #1d1d1f; --muted: #66666d; --line: #e2e0da; --accent: #e8590c; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #111215; --card: #1a1b20; --ink: #ececf0; --muted: #9a9aa3; --line: #2a2b31; } }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 ui-sans-serif, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 30px; margin: 0 0 6px; }
+  .sub { color: var(--muted); margin-bottom: 28px; }
+  a.card { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px;
+           margin-bottom: 14px; color: inherit; text-decoration: none; }
+  a.card:hover { border-color: var(--accent); }
+  .card b { font-size: 18px; } .card span { display: block; color: var(--muted); font-size: 14px; margin-top: 4px; }
+  img { width: 100%; border-radius: 12px; border: 1px solid var(--line); margin: 6px 0 22px; }
+  .foot { color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Roomnesia</h1>
+  <div class="sub">What changed in the room, proven by what the cameras could see, and what it means for a robot. Interactive 3D results; drag to orbit, click a change to fly to it, press ▶ to replay.</div>
+  <img src="img/real_evidence.gif" alt="expected vs actual vs changes, real office">
+  <a class="card" href="viewer/real_office.html"><b>Real office (SceneDiff benchmark)</b><span>Two chairs and a stool moved between two phone videos. 3 of 3 found, 0 false reports.</span></a>
+  <a class="card" href="viewer/synthetic_standard.html"><b>Synthetic room: standard</b><span>Chair moved and turned, bin removed, backpack added. Routes re-planned; "look here" viewpoints.</span></a>
+  <a class="card" href="viewer/synthetic_hard.html"><b>Synthetic room: hard</b><span>A flat rug removed (appearance channel), and changes the second video could not verify, correctly not reported.</span></a>
+  <p class="foot">Code, benchmarks and method: <a href="https://github.com/neevmodh/Roomnesia">github.com/neevmodh/Roomnesia</a>. The viewers load three.js from a CDN.</p>
+</main>
+</body>
+</html>
