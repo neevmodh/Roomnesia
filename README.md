@@ -279,3 +279,8 @@ docs/              capture guide, README figures
 
 ## Built on
 [VGGT](https://github.com/facebookresearch/vggt) (Meta; the VGGT-1B checkpoint is for non-commercial use) · [Grounding DINO](https://github.com/IDEA-Research/GroundingDINO) · [SigLIP](https://huggingface.co/google/siglip-base-patch16-224) · [SmolVLM2](https://huggingface.co/HuggingFaceTB/SmolVLM2-2.2B-Instruct) · [Depth Anything V2](https://github.com/DepthAnything/Depth-Anything-V2) · [three.js](https://threejs.org) · scikit-learn, SciPy, OpenCV
+
+## Licence and author
+Code: [MIT](LICENSE). Model weights keep their own licences (see above); the real-world example and benchmark pairs come from SceneDiff (MIT).
+
+Built by **Neev Modh** for the Humanoid *"What changed in the room?"* challenge · [GitHub](https://github.com/neevmodh) · [LinkedIn](https://www.linkedin.com/in/neev-modh-43478a285/)
