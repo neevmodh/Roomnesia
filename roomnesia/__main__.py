@@ -8,9 +8,14 @@ from __future__ import annotations
 import argparse
 import json
 import time
+import warnings
 from pathlib import Path
 
 import numpy as np
+
+# NumPy's Accelerate backend on Apple M4 flags spurious FP errors on ordinary finite matmuls
+# (numpy/numpy#28687); the results are unaffected, the warnings only bury the report.
+warnings.filterwarnings("ignore", r".* encountered in matmul", RuntimeWarning)
 
 from . import appearance, change, evidence, frames, geometry, landmarks, nav, reconstruct, semantics, viz
 
@@ -29,6 +34,14 @@ def main(argv=None):
     ap.add_argument("--force", action="store_true", help="recompute the reconstruction even if cached")
     ap.add_argument("--gif", action="store_true", help="also render a rotating 3D GIF (slower)")
     args = ap.parse_args(argv)
+    try:  # model-config chatter and per-tensor loading bars; download progress stays visible
+        from transformers.utils import logging as hf_logging
+        hf_logging.set_verbosity_error()
+        hf_logging.disable_progress_bar()
+        from huggingface_hub.utils import enable_progress_bars
+        enable_progress_bars()
+    except ImportError:
+        pass
     args.out.mkdir(parents=True, exist_ok=True)
     T = time.time()
 
