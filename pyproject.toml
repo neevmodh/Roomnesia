@@ -13,7 +13,7 @@ dependencies = [
     "opencv-python>=4.11.0.86",
     "pillow>=12.3.0",
     "protobuf>=7.36.2",
-    "pyarrow<19",
+    "pyarrow>=23.0.1,<24",  # 24+ needs numpy 2; vggt needs numpy<2 (so rerun-sdk stays at 0.23)
     "rerun-sdk>=0.23.1",
     "safetensors>=0.8.0",
     "scikit-learn>=1.9.1",
